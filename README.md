@@ -1,1 +1,1 @@
-# IK
+# Inverse kinematic project on javafx
