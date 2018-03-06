@@ -27,9 +27,9 @@ public class ControlView extends Group{
 	private double x2 = 180;
 	private double y2 = 100d;
 	
-	private NiceSlider s_mxx = new NiceSlider(x,y        ,"mxx: ", -10d, 10d, 0d);
-	private NiceSlider s_mxy = new NiceSlider(x,y += STEP,"mxy: ", -10d, 10d, 0d);
-	private NiceSlider s_mxz = new NiceSlider(x,y += STEP,"mxz: ", -10d, 10d, 0d);
+	private NiceSlider s_mxx = new NiceSlider(x,y        ,"mxx: ", -1000d, 1000d, -50d);
+	private NiceSlider s_mxy = new NiceSlider(x,y += STEP,"mxy: ", -1000d, 1000d, 50d);
+	private NiceSlider s_mxz = new NiceSlider(x,y += STEP,"mxz: ", -1000d, 1000d, 50d);
 
 	private NiceSlider s_myx = new NiceSlider(x,y += STEP,"myx: ", -10d, 10d, 0d);
 	private NiceSlider s_myy = new NiceSlider(x,y += STEP,"myy: ", -10d, 10d, 0d);

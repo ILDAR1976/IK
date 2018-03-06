@@ -16,17 +16,6 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.paint.Color;
 
-/**
- * Joint -  A Joint is equivalent to a Maya Joint Node
- * <p/>
- * If you are post-multiplying matrices, To transform a point p from object-space to world-space you would need to
- * post-multiply by the worldMatrix. (p' = p * wm) matrix = [S][SO][R][JO][IS][T] where R = [RX][RY][RZ]  (Note: order
- * is determined by rotateOrder)
- * <p/>
- * If you are pre-multiplying matrices, to transform a point p from object-space to world-space you would need to
- * pre-multiply by the worldMatrix. (p' = wm * p) matrix = [T][IS][JO][R][SO][S] where R = [RZ][RY][RX]  (Note: order is
- * determined by rotateOrder) Of these sub-matrices we can set [SO] to identity, so matrix = [T][IS][JO][R][S]
- */
 @SuppressWarnings({ "restriction", "unused" })
 public final class JointFx extends Group {
     private int meshId;
@@ -120,7 +109,7 @@ public final class JointFx extends Group {
 
 	public TriangleMesh createCubeMesh() {
 
-        float width = 14.1f / 2f;
+        float width = 20f;
         float points[] = {
                 -width, -width, -width,
                 width, -width, -width,

@@ -5,13 +5,19 @@ import javafx.geometry.Point3D;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.Group;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Translate;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.NumberBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,17 +28,18 @@ import edu.ik_01.ConfigurationControllers;
 import edu.ik_01.service.ContactService;
 import javax.annotation.PostConstruct;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.Sphere;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-/**
- * Date: 27.08.15 Time: 11:10
- *
- * @author Ruslan Molchanov (ruslanys@gmail.com)
- * @author http://mruslan.com
- */
+import javafx.scene.transform.Transform;
+import javafx.collections.ObservableList;
+import javafx.collections.FXCollections;
+
 @SuppressWarnings({ "SpringJavaAutowiringInspection", "restriction", "unused" })
 public class MainController {
 	@SuppressWarnings("unused")
@@ -43,12 +50,30 @@ public class MainController {
 	@Autowired
 	private ContactService contactService;
 	private List<JointFx> joints = new ArrayList<>();
-	
+
 	@Qualifier("controlPanelView")
 	@Autowired
 
 	private ConfigurationControllers.View controlView;
 
+	
+	private double mousePosX;
+    private double mousePosY;
+    private double mouseOldX;
+    private double mouseOldY;
+    private double mouseDeltaX;
+    private double mouseDeltaY;
+
+    private JointFx target;
+
+    private Bone bone;
+    private Bone bone2;
+    private Cylinder cylinder = new Cylinder(3d, 3d);
+    
+	@FXML
+	public void initialize() {
+	}
+	
 	@SuppressWarnings("unchecked")
 	@PostConstruct
 	public void init() {
@@ -56,21 +81,48 @@ public class MainController {
 		ControlView control = ((ControlPanelController) controlView.getController()).getControlView();
 
 		Skeleton skeleton = new Skeleton();
+		target = new JointFx("Target", "joint", 0d, 0d, 0d, .5d, Color.GREEN);
+
+		target.translateXProperty().bind(control.getS_mxx().getValue());
+		target.translateYProperty().bind(control.getS_mxy().getValue());
+		target.translateZProperty().bind(control.getS_mxz().getValue());
+
+		target.translateXProperty().addListener(new ChangeListener(){
+ 
+     		@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				listener();
+			}
+		});
 		
-		Bone bone = new Bone("First", new SimpleDoubleProperty(0d), new SimpleDoubleProperty(0d), new SimpleDoubleProperty(0d), 
-							 new SimpleDoubleProperty(50d), new SimpleDoubleProperty(0d), new SimpleDoubleProperty(0d));
-	
+		target.translateYProperty().addListener(new ChangeListener(){
+			 
+     		@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				listener();
+			}
+		});
+
+		target.translateZProperty().addListener(new ChangeListener(){
+			 
+     		@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				listener();
+			}
+		});
+
 		
-	       
-		joints.add(bone.getpJoint());
-		joints.add(bone.getsJoint());
+		bone = new Bone("First", new SimpleDoubleProperty(0d), new SimpleDoubleProperty(0d),
+				new SimpleDoubleProperty(0d), new SimpleDoubleProperty(100d), new SimpleDoubleProperty(0d),
+				new SimpleDoubleProperty(0d));
 		
 		skeleton.addChildren(bone);
 		
+
 		Label[][] lables = control.getLabel();
 
-		grp.getChildren().addAll(skeleton);
-		
+		grp.getChildren().addAll(skeleton, target, cylinder);
+
 		mainAnchor.getChildren().add(grp);
 	}
 
@@ -238,7 +290,7 @@ public class MainController {
 		control.getRotateZ().bind(control.getS_rz().getValue());
 
 	}
-	
+
 	private void globalBinding2(JointFx jointFx1, ControlView control) {
 		// line 1
 		DoubleBinding p_mxx = new DoubleBinding() {
@@ -350,7 +402,6 @@ public class MainController {
 			}
 		};
 
-		
 		jointFx1.getAffine().mxxProperty().bind(p_mxx);
 		jointFx1.getAffine().mxyProperty().bind(p_mxy);
 		jointFx1.getAffine().mxzProperty().bind(p_mxz);
@@ -368,14 +419,95 @@ public class MainController {
 		control.getRotateZ().bind(control.getS_rz().getValue());
 
 	}
-	
+
 	private void globalBinding3(JointFx jointFx1, JointFx jointFx2, ControlView control) {
 		jointFx1.getAffine().txProperty().bindBidirectional(control.getS_mxx().getValue());
 		jointFx1.getAffine().tyProperty().bindBidirectional(control.getS_mxy().getValue());
 		jointFx1.getAffine().tzProperty().bindBidirectional(control.getS_mxz().getValue());
-		
+
 		jointFx2.getAffine().txProperty().bindBidirectional(control.getS_myx().getValue());
 		jointFx2.getAffine().tyProperty().bindBidirectional(control.getS_myy().getValue());
 		jointFx2.getAffine().tzProperty().bindBidirectional(control.getS_myz().getValue());
 	}
+
+	public void handleMouse(Scene scene) {
+        scene.setOnMousePressed(new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent me) {
+                mousePosX = me.getSceneX();
+                mousePosY = me.getSceneY();
+                mouseOldX = me.getSceneX();
+                mouseOldY = me.getSceneY();
+            }
+        });
+        scene.setOnMouseDragged(new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent me) {
+                mouseOldX = mousePosX;
+                mouseOldY = mousePosY;
+                mousePosX = me.getSceneX();
+                mousePosY = me.getSceneY();
+                mouseDeltaX = (mousePosX - mouseOldX);
+                mouseDeltaY = (mousePosY - mouseOldY);
+
+                double modifier = 1.0;
+                double modifierFactor = 0.1;
+
+ 
+            }
+        });
+	
+    }
+
+	private synchronized void listener() {
+		
+	
+	    final PhongMaterial greyMaterial = new PhongMaterial();
+        greyMaterial.setDiffuseColor(Color.BLUE);
+        greyMaterial.setSpecularColor(Color.BLUE);
+	    cylinder.setMaterial(greyMaterial);
+	    
+/*	    cylinder.getTransforms().clear();
+	    cylinder.getTransforms().addAll(calcDirection(
+	    		new Point3D(0d,
+	    				    0d,
+	    				    0d),
+	    		new Point3D(target.getTranslateX(),target.getTranslateY(),target.getTranslateZ())));
+*/	    
+	    bone.getTransforms().clear();
+	    bone.getTransforms().addAll(calcDirection2(
+	    		new Point3D(bone.getpJoint().getAffine().getTx(),
+    				    bone.getpJoint().getAffine().getTy(),
+    				    bone.getpJoint().getAffine().getTz()),
+    		    new Point3D(target.getTranslateX(),target.getTranslateY(),target.getTranslateZ())
+				));
+	}
+	
+	private ObservableList<Transform> calcDirection(Point3D A, Point3D B) {
+		    Point3D temp = A.subtract(B);
+		    double Y = temp.getX() != 0 || temp.getZ() != 0 ? B.getY() : B.getY() > A.getY() ? B.getY() : A.getY();
+		    Point3D dir = A.subtract(B).crossProduct(new Point3D(0, -1, 0));
+		    double angle = Math.acos(A.subtract(B).normalize().dotProduct(new Point3D(0, -1, 0)));
+		    double h1 = A.distance(B);	
+		    cylinder.setHeight(h1);
+		    List<Transform> transformations = new ArrayList<>();
+		    ObservableList<Transform> transforms = FXCollections.observableList(transformations);
+		    transforms.addAll(new Translate(B.getX(), Y - h1 / 2d, B.getZ()),
+		            new Rotate(-Math.toDegrees(angle), 0d, h1 / 2d, 0d, new Point3D(dir.getX(), -dir.getY(), dir.getZ())));
+		    return transforms;
+	}
+	
+	private ObservableList<Transform> calcDirection2(Point3D A, Point3D B) {
+	    Point3D temp = A.subtract(B);
+	    double Y = temp.getX() != 0 || temp.getZ() != 0 ? B.getY() : B.getY() > A.getY() ? B.getY() : A.getY();
+	    Point3D dir = A.subtract(B).crossProduct(new Point3D(0, -1, 0));
+	    double angle = Math.acos(A.subtract(B).normalize().dotProduct(new Point3D(0, 1, 0)));
+	    double h1 = A.distance(B);	
+	    
+	    List<Transform> transformations = new ArrayList<>();
+	    ObservableList<Transform> transforms = FXCollections.observableList(transformations);
+	    transforms.addAll(new Translate(A.getX(),A.getY(),A.getZ()),
+	            new Rotate(Math.toDegrees(angle), A.getX(),A.getY(),A.getZ(), new Point3D(dir.getX(), -dir.getY(), dir.getZ())),
+	            new Rotate(-90, 0, 0, 0, Rotate.Z_AXIS));
+
+	    return transforms;
+}
 }

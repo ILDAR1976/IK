@@ -14,8 +14,9 @@ import javafx.beans.property.DoubleProperty;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.transform.Affine;
 
-@SuppressWarnings("restriction")
+@SuppressWarnings({"restriction", "unused"})
 public class Bone extends Group {
 	private Logger logger = LoggerFactory.getLogger(Bone.class);
 	private final double SCALE = 1d;
@@ -39,11 +40,11 @@ public class Bone extends Group {
 		this.sy = sy;
 		this.sz = sz;
 		this.name = name;
-		line = Line(new Point3D(px.get(),py.get(),pz.get()),new Point3D(sx.get(),sy.get(),sz.get()));
 		pJoint = new JointFx("","joint", px.get(), py.get(), pz.get(), SCALE);
 		sJoint = new JointFx("","joint", sx.get(), sy.get(), sz.get(), SCALE);
-		
-	        this.getChildren().addAll(pJoint, sJoint, line, borderPane);
+		line = Line(new Point3D(px.get(),py.get(),pz.get()),new Point3D(sx.get(),sy.get(),sz.get()));
+		//pJoint.setOnTouchMoved();
+	    this.getChildren().addAll(pJoint, sJoint, line, borderPane);
 	}
 	
 	public JointFx getpJoint() {
@@ -53,6 +54,10 @@ public class Bone extends Group {
 	public JointFx getsJoint() {
 		return sJoint;
 	}
+	
+	public Cylinder getLine() {
+		return line;
+	}
 
 	private Cylinder Line(Point3D A, Point3D B) {
 	    Point3D temp = A.subtract(B);
@@ -60,24 +65,25 @@ public class Bone extends Group {
 	    Point3D dir = A.subtract(B).crossProduct(new Point3D(0, -1, 0));
 	    double angle = Math.acos(A.subtract(B).normalize().dotProduct(new Point3D(0, -1, 0)));
 	    double h1 = A.distance(B);
-	    Cylinder cylinder = new Cylinder(5d, h1);
+	    Cylinder cylinder = new Cylinder(10d, h1);
 	    final PhongMaterial greyMaterial = new PhongMaterial();
         greyMaterial.setDiffuseColor(Color.RED);
         greyMaterial.setSpecularColor(Color.RED);
 	    cylinder.setMaterial(greyMaterial);
 	    cylinder.getTransforms().addAll(new Translate(B.getX(), Y - h1 / 2d, B.getZ()),
 	            new Rotate(-Math.toDegrees(angle), 0d, h1 / 2d, 0d, new Point3D(dir.getX(), -dir.getY(), dir.getZ())));
-		
-	    Text text = new Text();
+		Text text = new Text();
         text.setText(name);
         text.setCache(true);
         text.setFont(Font.font("Arial Narrow", FontWeight.BOLD, 8));
+        
         Rotate rotateTextZ = new Rotate();
         { rotateTextZ.setAxis(Rotate.Z_AXIS); }
         rotateTextZ.setAngle(90d);
         text.setTranslateX(-10d);
         text.setTranslateY(5d);
         //text.getTransforms().addAll(rotateTextZ);
+        
         this.borderPane = new BorderPane();
         this.borderPane.setStyle("-fx-background-color: transparent; ");
         this.borderPane.setTop(text);
@@ -86,5 +92,11 @@ public class Bone extends Group {
         this.borderPane.getTransforms().add(rotateTextZ);
 	    
         return cylinder;
+	}
+	
+	
+	
+	private void handleMovment() {
+		
 	}
 }

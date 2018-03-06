@@ -97,7 +97,9 @@ public class Application extends AbstractJavaFxApplicationSupport {
         buildAxes();
     	
     	Scene scene = new Scene(root, 1024, 768, true, SceneAntialiasing.BALANCED);
-        scene.setFill(Color.GREY);
+    	//((MainController)view.getController()).handleMouse(scene);
+
+    	scene.setFill(Color.GREY);
         handleMouse(scene, world);       
         handleKeyboard(scene, root);
         stage.setTitle(windowTitle);
@@ -323,4 +325,5 @@ public class Application extends AbstractJavaFxApplicationSupport {
         });
     }
 
+ 
 }
