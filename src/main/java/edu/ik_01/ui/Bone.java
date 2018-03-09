@@ -11,92 +11,122 @@ import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Affine;
+import javafx.beans.property.SimpleDoubleProperty;
 
 @SuppressWarnings({"restriction", "unused"})
 public class Bone extends Group {
 	private Logger logger = LoggerFactory.getLogger(Bone.class);
-	private final double SCALE = 1d;
-	private DoubleProperty px;
-	private DoubleProperty py;
-	private DoubleProperty pz;
-	private DoubleProperty sx;
-	private DoubleProperty sy;
-	private DoubleProperty sz;
-	private JointFx pJoint;
-	private JointFx sJoint;
-	private Cylinder line;
-	private BorderPane borderPane;
-	private String name;
 	
-	public Bone(String name, DoubleProperty px, DoubleProperty py, DoubleProperty pz, DoubleProperty sx, DoubleProperty sy, DoubleProperty sz) {
-		this.px = px;
-		this.py = py;
-		this.pz = pz;
-		this.sx = sx;
-		this.sy = sy;
-		this.sz = sz;
-		this.name = name;
-		pJoint = new JointFx("","joint", px.get(), py.get(), pz.get(), SCALE);
-		sJoint = new JointFx("","joint", sx.get(), sy.get(), sz.get(), SCALE);
-		line = Line(new Point3D(px.get(),py.get(),pz.get()),new Point3D(sx.get(),sy.get(),sz.get()));
-		//pJoint.setOnTouchMoved();
-	    this.getChildren().addAll(pJoint, sJoint, line, borderPane);
-	}
+	private DoubleProperty pointAX;
+	private DoubleProperty pointAY;
+	private DoubleProperty pointAZ;
 	
-	public JointFx getpJoint() {
-		return pJoint;
-	}
-
-	public JointFx getsJoint() {
-		return sJoint;
-	}
+	private DoubleProperty pointBX;
+	private DoubleProperty pointBY;
+	private DoubleProperty pointBZ;
 	
-	public Cylinder getLine() {
-		return line;
-	}
-
-	private Cylinder Line(Point3D A, Point3D B) {
-	    Point3D temp = A.subtract(B);
-	    double Y = temp.getX() != 0 || temp.getZ() != 0 ? B.getY() : B.getY() > A.getY() ? B.getY() : A.getY();
-	    Point3D dir = A.subtract(B).crossProduct(new Point3D(0, -1, 0));
-	    double angle = Math.acos(A.subtract(B).normalize().dotProduct(new Point3D(0, -1, 0)));
-	    double h1 = A.distance(B);
-	    Cylinder cylinder = new Cylinder(10d, h1);
-	    final PhongMaterial greyMaterial = new PhongMaterial();
-        greyMaterial.setDiffuseColor(Color.RED);
-        greyMaterial.setSpecularColor(Color.RED);
-	    cylinder.setMaterial(greyMaterial);
-	    cylinder.getTransforms().addAll(new Translate(B.getX(), Y - h1 / 2d, B.getZ()),
-	            new Rotate(-Math.toDegrees(angle), 0d, h1 / 2d, 0d, new Point3D(dir.getX(), -dir.getY(), dir.getZ())));
-		Text text = new Text();
-        text.setText(name);
-        text.setCache(true);
-        text.setFont(Font.font("Arial Narrow", FontWeight.BOLD, 8));
-        
-        Rotate rotateTextZ = new Rotate();
-        { rotateTextZ.setAxis(Rotate.Z_AXIS); }
-        rotateTextZ.setAngle(90d);
-        text.setTranslateX(-10d);
-        text.setTranslateY(5d);
-        //text.getTransforms().addAll(rotateTextZ);
-        
-        this.borderPane = new BorderPane();
-        this.borderPane.setStyle("-fx-background-color: transparent; ");
-        this.borderPane.setTop(text);
-        this.borderPane.setCache(true);
-        this.borderPane.getTransforms().addAll(cylinder.getTransforms());
-        this.borderPane.getTransforms().add(rotateTextZ);
+	private Color color;
+	
+	public Bone(Point3D pointA, Point3D pointB, Color color) {
+	    this.color = color;
+	    pointAX = new SimpleDoubleProperty(pointA.getX());
+	    pointAY = new SimpleDoubleProperty(pointA.getY());
+	    pointAZ = new SimpleDoubleProperty(pointA.getZ());
 	    
-        return cylinder;
+	    pointBX = new SimpleDoubleProperty(pointB.getX());
+	    pointBY = new SimpleDoubleProperty(pointB.getY());
+	    pointBZ = new SimpleDoubleProperty(pointB.getZ());
+
+	    draw();
+	    bind();
 	}
 	
+	public DoubleProperty getPointAX() {
+		return pointAX;
+	}
+
+	public DoubleProperty getPointAY() {
+		return pointAY;
+	}
+
+	public DoubleProperty getPointAZ() {
+		return pointAZ;
+	}
+
+	public DoubleProperty getPointBX() {
+		return pointBX;
+	}
+
+	public DoubleProperty getPointBY() {
+		return pointBY;
+	}
+
+	public DoubleProperty getPointBZ() {
+		return pointBZ;
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void bind() {
+		pointAX.addListener(new ChangeListener() {
+			@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				draw();
+			}
+		});
+		pointAY.addListener(new ChangeListener() {
+			@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				draw();
+			}
+		});
+		pointAZ.addListener(new ChangeListener() {
+			@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				draw();
+			}
+		});
+		pointBX.addListener(new ChangeListener() {
+			@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				draw();
+			}
+		});
+		pointBY.addListener(new ChangeListener() {
+			@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				draw();
+			}
+		});
+		pointBZ.addListener(new ChangeListener() {
+			@Override
+			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+				draw();
+			}
+		});
+	}
 	
-	
-	private void handleMovment() {
-		
+	public synchronized void draw() {
+	    Point3D pointA = new Point3D(pointAX.get(), pointAY.get(), pointAZ.get());
+	    Point3D pointB = new Point3D(pointBX.get(), pointBY.get(), pointBZ.get());
+	    Point3D temp = pointA.subtract(pointB);
+	    double Y = temp.getX() != 0 || temp.getZ() != 0 ? pointB.getY() : pointB.getY() > pointA.getY() ? pointB.getY() : pointA.getY();
+	    Point3D dir = pointA.subtract(pointB).crossProduct(new Point3D(0, -1, 0));
+	    double angle = Math.acos(pointA.subtract(pointB).normalize().dotProduct(new Point3D(0, -1, 0)));
+	    double h1 = pointA.distance(pointB);
+	    Cylinder cylinder = new Cylinder(5d, h1);
+	    final PhongMaterial material = new PhongMaterial();
+        material.setDiffuseColor(color);
+        material.setSpecularColor(color);
+	    cylinder.setMaterial(material);
+	    cylinder.getTransforms().addAll(new Translate(pointB.getX(), Y - h1 / 2d, pointB.getZ()),
+	            new Rotate(-Math.toDegrees(angle), 0d, h1 / 2d, 0d, new Point3D(dir.getX(), -dir.getY(), dir.getZ())));
+	    this.getChildren().clear();
+	    this.getChildren().add(cylinder);
 	}
 }

@@ -8,6 +8,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.beans.binding.Bindings;
@@ -40,474 +41,255 @@ import javafx.scene.transform.Transform;
 import javafx.collections.ObservableList;
 import javafx.collections.FXCollections;
 
-@SuppressWarnings({ "SpringJavaAutowiringInspection", "restriction", "unused" })
+@SuppressWarnings({ "restriction", "unused" })
+
 public class MainController {
-	@SuppressWarnings("unused")
 	private Logger logger = LoggerFactory.getLogger(MainController.class);
 	@FXML
 	private AnchorPane mainAnchor;
 
 	@Autowired
 	private ContactService contactService;
-	private List<JointFx> joints = new ArrayList<>();
 
 	@Qualifier("controlPanelView")
 	@Autowired
-
 	private ConfigurationControllers.View controlView;
-
 	
-	private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
-    private double mouseDeltaX;
-    private double mouseDeltaY;
+	/*
+	 * A working variables
+	 */
+	
+	
+    private final int N = 5 + 1;
+    private final double TOLIRANCE = .1d;
+    private Joint target;
+    private Joint b;
+    private Joint[] p = new Joint[N];
+    private Bone[] l = new Bone[N - 1];
 
-    private JointFx target;
-
-    private Bone bone;
-    private Bone bone2;
-    private Cylinder cylinder = new Cylinder(3d, 3d);
     
+    private double distance;
+    private double distanceBreak;
+    private double DIFa;
+    private double[] d = new double[N];
+    private double[] r = new double[N];
+    private double[] lambda = new double[N];
+     
 	@FXML
 	public void initialize() {
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ })
 	@PostConstruct
 	public void init() {
 		Group grp = new Group();
 		ControlView control = ((ControlPanelController) controlView.getController()).getControlView();
-
-		Skeleton skeleton = new Skeleton();
-		target = new JointFx("Target", "joint", 0d, 0d, 0d, .5d, Color.GREEN);
-
-		target.translateXProperty().bind(control.getS_mxx().getValue());
-		target.translateYProperty().bind(control.getS_mxy().getValue());
-		target.translateZProperty().bind(control.getS_mxz().getValue());
-
-		target.translateXProperty().addListener(new ChangeListener(){
- 
-     		@Override
-			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-				listener();
-			}
-		});
+		target = new Joint("target", new Affine(new Translate(50d, -50d, 50d)),Color.TRANSPARENT);
+		int i = 0;
+		p[1] = new Joint("joint_" + ++i, new Affine(new Translate(50d, -50d, 50d)),Color.BLUE);
+		p[2] = new Joint("joint_" + ++i, new Affine(new Translate(-50d, 50d, 50d)),Color.BLUE);
+		p[3] = new Joint("joint_" + ++i, new Affine(new Translate(50d, 50d, -50d)),Color.BLUE);
+		p[4] = new Joint("joint_" + ++i, new Affine(new Translate(-50d, -50d, -50d)),Color.BLUE);
+		p[5] = new Joint("joint_" + ++i, new Affine(new Translate(-50d, 50d, -50d)),Color.BLUE);
 		
-		target.translateYProperty().addListener(new ChangeListener(){
-			 
-     		@Override
-			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-				listener();
-			}
-		});
+		l[1] = new Bone(new Point3D(50d, -50d, 50d), new Point3D(-50d, 50d, 50d), Color.RED);
+		l[2] = new Bone(new Point3D(-50d, 50d, 50d), new Point3D(50d, 50d, -50d), Color.RED);
+		l[3] = new Bone(new Point3D(50d, 50d, -50d), new Point3D(-50d, -50d, -50d), Color.RED);
+		l[4] = new Bone(new Point3D(-50d, -50d, -50d), new Point3D(-50d, 50d, -50d), Color.RED);
 
-		target.translateZProperty().addListener(new ChangeListener(){
-			 
-     		@Override
-			public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-				listener();
-			}
-		});
-
+		bind(target, control);
 		
-		bone = new Bone("First", new SimpleDoubleProperty(0d), new SimpleDoubleProperty(0d),
-				new SimpleDoubleProperty(0d), new SimpleDoubleProperty(100d), new SimpleDoubleProperty(0d),
-				new SimpleDoubleProperty(0d));
+		grp.getChildren().addAll(target, p[1], p[2], p[3], p[4], p[5], l[1], l[2], l[3], l[4]);
 		
-		skeleton.addChildren(bone);
-		
-
-		Label[][] lables = control.getLabel();
-
-		grp.getChildren().addAll(skeleton, target, cylinder);
-
-		mainAnchor.getChildren().add(grp);
+		mainAnchor.getChildren().addAll(grp);
 	}
-
-	private void globalBinding(Group grp, ControlView control, Label[][] lables) {
-		JointFx jointFx1 = (JointFx) grp.getChildren().get(0);
-		lables[0][0].textProperty().bind(jointFx1.getAffine().mxxProperty().asString());
-		lables[1][0].textProperty().bind(jointFx1.getAffine().mxyProperty().asString());
-		lables[2][0].textProperty().bind(jointFx1.getAffine().mxzProperty().asString());
-		lables[3][0].textProperty().bind(jointFx1.getAffine().txProperty().asString());
-
-		lables[0][1].textProperty().bind(jointFx1.getAffine().myxProperty().asString());
-		lables[1][1].textProperty().bind(jointFx1.getAffine().myyProperty().asString());
-		lables[2][1].textProperty().bind(jointFx1.getAffine().myzProperty().asString());
-		lables[3][1].textProperty().bind(jointFx1.getAffine().tyProperty().asString());
-
-		lables[0][2].textProperty().bind(jointFx1.getAffine().mzxProperty().asString());
-		lables[1][2].textProperty().bind(jointFx1.getAffine().mzyProperty().asString());
-		lables[2][2].textProperty().bind(jointFx1.getAffine().mzzProperty().asString());
-		lables[3][2].textProperty().bind(jointFx1.getAffine().tzProperty().asString());
-
-		jointFx1.getAffine().mxxProperty().bindBidirectional(control.getS_mxx().getValue());
-		jointFx1.getAffine().mxyProperty().bindBidirectional(control.getS_mxy().getValue());
-		jointFx1.getAffine().mxzProperty().bindBidirectional(control.getS_mxz().getValue());
-
-		jointFx1.getAffine().myxProperty().bindBidirectional(control.getS_myx().getValue());
-		jointFx1.getAffine().myyProperty().bindBidirectional(control.getS_myy().getValue());
-		jointFx1.getAffine().myzProperty().bindBidirectional(control.getS_myz().getValue());
-
-		jointFx1.getAffine().mzxProperty().bindBidirectional(control.getS_mzx().getValue());
-		jointFx1.getAffine().mzyProperty().bindBidirectional(control.getS_mzy().getValue());
-		jointFx1.getAffine().mzzProperty().bindBidirectional(control.getS_mzz().getValue());
-
-		jointFx1.getAffine().txProperty().bindBidirectional(control.getS_tx().getValue());
-		jointFx1.getAffine().tyProperty().bindBidirectional(control.getS_ty().getValue());
-		jointFx1.getAffine().tzProperty().bindBidirectional(control.getS_tz().getValue());
-
-		jointFx1.scaleXProperty().set(15d);
-		jointFx1.scaleYProperty().set(15d);
-		jointFx1.scaleZProperty().set(15d);
-
-		// line 1
-		DoubleBinding p_mxx = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.cos(control.getRotateX().get()) * Math.cos(control.getRotateY().get())
-						- Math.sin(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.sin(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_mxy = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateX().get()) * Math.cos(control.getRotateY().get())
-						+ Math.cos(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.sin(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_mxz = new DoubleBinding() {
-			{
-				super.bind(control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateZ().get()) * Math.sin(control.getRotateY().get()));
-			}
-		};
-
-		// line 2
-		DoubleBinding p_myx = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (-Math.cos(control.getRotateX().get()) * Math.sin(control.getRotateY().get())
-						- Math.sin(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.cos(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_myy = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (-Math.sin(control.getRotateX().get()) * Math.sin(control.getRotateY().get())
-						+ Math.cos(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.cos(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_myz = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateZ().get()) * Math.cos(control.getRotateY().get()));
-			}
-		};
-
-		// line 3
-		DoubleBinding p_mzx = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateX().get()) * Math.sin(control.getRotateZ().get()));
-			}
-		};
-
-		DoubleBinding p_mzy = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (-Math.cos(control.getRotateX().get()) * Math.sin(control.getRotateZ().get()));
-			}
-		};
-
-		DoubleBinding p_mzz = new DoubleBinding() {
-			{
-				super.bind(control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.cos(control.getRotateZ().get()));
-			}
-		};
-
-		control.getS_mxx().getValue().bind(p_mxx);
-		control.getS_mxy().getValue().bind(p_mxy);
-		control.getS_mxz().getValue().bind(p_mxz);
-
-		control.getS_myx().getValue().bind(p_myx);
-		control.getS_myy().getValue().bind(p_myy);
-		control.getS_myz().getValue().bind(p_myz);
-
-		control.getS_mzx().getValue().bind(p_mxx);
-		control.getS_mzy().getValue().bind(p_mxy);
-		control.getS_mzz().getValue().bind(p_mzz);
-
-		control.getRotateX().bind(control.getS_rx().getValue());
-		control.getRotateY().bind(control.getS_ry().getValue());
-		control.getRotateZ().bind(control.getS_rz().getValue());
-
-	}
-
-	private void globalBinding2(JointFx jointFx1, ControlView control) {
-		// line 1
-		DoubleBinding p_mxx = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.cos(control.getRotateX().get()) * Math.cos(control.getRotateY().get())
-						- Math.sin(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.sin(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_mxy = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateX().get()) * Math.cos(control.getRotateY().get())
-						+ Math.cos(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.sin(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_mxz = new DoubleBinding() {
-			{
-				super.bind(control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateZ().get()) * Math.sin(control.getRotateY().get()));
-			}
-		};
-
-		// line 2
-		DoubleBinding p_myx = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (-Math.cos(control.getRotateX().get()) * Math.sin(control.getRotateY().get())
-						- Math.sin(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.cos(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_myy = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (-Math.sin(control.getRotateX().get()) * Math.sin(control.getRotateY().get())
-						+ Math.cos(control.getRotateX().get()) * Math.cos(control.getRotateZ().get())
-								* Math.cos(control.getRotateY().get()));
-			}
-		};
-
-		DoubleBinding p_myz = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateY(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateZ().get()) * Math.cos(control.getRotateY().get()));
-			}
-		};
-
-		// line 3
-		DoubleBinding p_mzx = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.sin(control.getRotateX().get()) * Math.sin(control.getRotateZ().get()));
-			}
-		};
-
-		DoubleBinding p_mzy = new DoubleBinding() {
-			{
-				super.bind(control.getRotateX(), control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (-Math.cos(control.getRotateX().get()) * Math.sin(control.getRotateZ().get()));
-			}
-		};
-
-		DoubleBinding p_mzz = new DoubleBinding() {
-			{
-				super.bind(control.getRotateZ());
-			}
-
-			@Override
-			protected double computeValue() {
-				return (Math.cos(control.getRotateZ().get()));
-			}
-		};
-
-		jointFx1.getAffine().mxxProperty().bind(p_mxx);
-		jointFx1.getAffine().mxyProperty().bind(p_mxy);
-		jointFx1.getAffine().mxzProperty().bind(p_mxz);
-
-		jointFx1.getAffine().myxProperty().bind(p_myx);
-		jointFx1.getAffine().myyProperty().bind(p_myy);
-		jointFx1.getAffine().myzProperty().bind(p_myz);
-
-		jointFx1.getAffine().mzxProperty().bind(p_mzx);
-		jointFx1.getAffine().mzyProperty().bind(p_mzy);
-		jointFx1.getAffine().mzzProperty().bind(p_mzz);
-
-		control.getRotateX().bind(control.getS_rx().getValue());
-		control.getRotateY().bind(control.getS_ry().getValue());
-		control.getRotateZ().bind(control.getS_rz().getValue());
-
-	}
-
-	private void globalBinding3(JointFx jointFx1, JointFx jointFx2, ControlView control) {
-		jointFx1.getAffine().txProperty().bindBidirectional(control.getS_mxx().getValue());
-		jointFx1.getAffine().tyProperty().bindBidirectional(control.getS_mxy().getValue());
-		jointFx1.getAffine().tzProperty().bindBidirectional(control.getS_mxz().getValue());
-
-		jointFx2.getAffine().txProperty().bindBidirectional(control.getS_myx().getValue());
-		jointFx2.getAffine().tyProperty().bindBidirectional(control.getS_myy().getValue());
-		jointFx2.getAffine().tzProperty().bindBidirectional(control.getS_myz().getValue());
-	}
-
-	public void handleMouse(Scene scene) {
-        scene.setOnMousePressed(new EventHandler<MouseEvent>() {
-            public void handle(MouseEvent me) {
-                mousePosX = me.getSceneX();
-                mousePosY = me.getSceneY();
-                mouseOldX = me.getSceneX();
-                mouseOldY = me.getSceneY();
-            }
-        });
-        scene.setOnMouseDragged(new EventHandler<MouseEvent>() {
-            public void handle(MouseEvent me) {
-                mouseOldX = mousePosX;
-                mouseOldY = mousePosY;
-                mousePosX = me.getSceneX();
-                mousePosY = me.getSceneY();
-                mouseDeltaX = (mousePosX - mouseOldX);
-                mouseDeltaY = (mousePosY - mouseOldY);
-
-                double modifier = 1.0;
-                double modifierFactor = 0.1;
-
- 
-            }
-        });
 	
-    }
+	private void recalculation() {
+		b = new Joint("buffer");	
+		//Дистанция между корнем и целью
+		//dist  = | p[1] - t |
+		distance = getDistance(p[1], target);	
+		
+		//Проверяем достижимость цели
+		distanceBreak = 0d;
+		for (int i = 1; i <= (N - 2); i++) {
+			distanceBreak += getDistance(p[i], p[i+1]);
+			d[i] = getDistance(p[i], p[i+1]);
+		}
+		
+		if (distance > distanceBreak) 
+		{
+		    //цель недостижима
+			for (int i = 1; i < (N - 3); i++) 
+		    {
+		        //Найдем дистанцию r[i] между целью t и узлом p[i]
+		        r[i] = getDistance(p[i], target);
+		        lambda[i] = d[i] / r[i];
+		        
+		        //Находим новую позицию узла p[i]
+		        //p[i+1] = (1 - lambda[i]) * p[i] + lambda[i] * t
+		        p[i] = calcNewPosition(p[i], target, p[i], lambda[i]);
+		   }
+		} else	{
+		    //Цель достижима; т.о. b будет новой позицией узла p[1]
+		    //b = p[1];
+		    setPosition(b,p[1]);
+		    //Проверяем, не выше ли дистанция между конечным узлом p[n] и 
+		    //целевой позицией t значения терпимости (tolerance)
+		    DIFa = getDistance(p[N-1], target);
+		    
+		    while (DIFa > TOLIRANCE) {
+		         
+		    	 //Этап 1 : прямое следование
+		         //Устанавливаем конечный узел p[n] в качестве цели (вероятно, имелось ввиду "ставим на позицию цели" - прим. перев.)
+		         //p[N - 1] = target;
+		         setPosition(p[N-1], target);
+		         
+		         for (int j = (N-2); j >= 1; j--) {
+		                //Получаем расстояние r[i] между узлом p[j] и новой позицией p[j+1]
+		                r[j] = getDistance(p[j+1],p[j]);
+		                lambda[j] = d[j] / r[j];
+		                //Вычисляем новую позицию  узла p[j]
+		                //p[j] = ( 1 - lambda[j]) * p[j+1] + lambda[j] * p[j]
+		                p[j] = calcNewPosition(p[j+1], p[j], lambda[j], false);		
+		         }
+		         
+		         //Этап 2: обратное следование
+		         //Устанавливаем корневому элементу p[1] начальную позицию
+		         //p[1] = b;
+		         setPosition(p[1], b);
+		         for (int i = 1; i < (N-2); i++) 
+		         {
+		              //Получаем дистанцию r[i] между узлом p[i+1] и позицией p[i]
+		              r[i] = getDistance(p[i+1], p[i]);
+		              lambda[i] = d[i] / r[i];
+		              //Получаем новую позицию p[i]
+		              //p[i+1] = (1-lambda[i]) * p[i] + lambda[i] * p[i+1]
+		              p[i+1] = calcNewPosition(p[i], p[i+1], lambda[i], false);		  
+		         }
+		         
+		         DIFa = getDistance(p[N-1], target);
+		    }
+		}
+	}
 
+	private Point3D scalarMul(Point3D inp, double scalar) {
+		return new Point3D(
+				scalar * inp.getX(),
+				scalar * inp.getY(),
+				scalar * inp.getZ()
+				);
+	}
+	
+	private synchronized Joint calcNewPosition(Joint a, Joint t, double scalar, boolean flag) {
+	    
+		Point3D point = 
+               scalarMul(
+        		new Point3D(
+        				a.getAffine().getTx(),
+        				a.getAffine().getTy(),
+        				a.getAffine().getTz()),
+        		1 - scalar).add(
+        	   scalarMul(
+        		new Point3D(
+        				t.getAffine().getTx(),
+        				t.getAffine().getTy(),
+        				t.getAffine().getTz()),
+        		scalar));   
+        
+		if (flag) {
+	        a.getAffine().setTx(point.getX());
+	        a.getAffine().setTy(point.getY());
+	        a.getAffine().setTz(point.getZ());
+	        return a;
+		} else {
+	        t.getAffine().setTx(point.getX());
+	        t.getAffine().setTy(point.getY());
+	        t.getAffine().setTz(point.getZ());
+	        return t;
+		}
+        
+	}
+	
+	private synchronized Joint calcNewPosition(Joint a, Joint t, Joint c, double scalar) {
+		Joint joint = new Joint("");
+		joint = calcNewPosition(a, t, scalar, true);
+        c.getAffine().setTx(joint.getAffine().getTx());
+        c.getAffine().setTy(joint.getAffine().getTy());
+        c.getAffine().setTz(joint.getAffine().getTz());
+        return c;
+	}
+	
+	private double getDistance(Joint a, Joint b) {
+		return (new Point3D(a.getAffine().getTx(), a.getAffine().getTy(), a.getAffine().getTz())).distance(
+			   (new Point3D(b.getAffine().getTx(), b.getAffine().getTy(), b.getAffine().getTz())));		
+	}
+
+	private void bind(Joint target, ControlView control) {
+		target.getAffine().txProperty().bind(control.getS_mxx().getValue());
+		target.getAffine().tyProperty().bind(control.getS_mxy().getValue());
+		target.getAffine().tzProperty().bind(control.getS_mxz().getValue());
+
+		target.getAffine().txProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> ov, Number new_val, Number old_val) {
+				listener();
+			}
+		});
+		target.getAffine().tyProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> ov, Number new_val, Number old_val) {
+				listener();
+			}
+		});
+		target.getAffine().tzProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> ov, Number new_val, Number old_val) {
+				listener();
+			}
+		});
+
+		l[1].getPointAX().bind(p[1].getAffine().txProperty());
+		l[1].getPointAY().bind(p[1].getAffine().tyProperty());
+		l[1].getPointAZ().bind(p[1].getAffine().tzProperty());
+		
+		l[1].getPointBX().bind(p[2].getAffine().txProperty());
+		l[1].getPointBY().bind(p[2].getAffine().tyProperty());
+		l[1].getPointBZ().bind(p[2].getAffine().tzProperty());
+		
+		l[2].getPointAX().bind(p[2].getAffine().txProperty());
+		l[2].getPointAY().bind(p[2].getAffine().tyProperty());
+		l[2].getPointAZ().bind(p[2].getAffine().tzProperty());
+		
+		l[2].getPointBX().bind(p[3].getAffine().txProperty());
+		l[2].getPointBY().bind(p[3].getAffine().tyProperty());
+		l[2].getPointBZ().bind(p[3].getAffine().tzProperty());
+
+		l[3].getPointAX().bind(p[3].getAffine().txProperty());
+		l[3].getPointAY().bind(p[3].getAffine().tyProperty());
+		l[3].getPointAZ().bind(p[3].getAffine().tzProperty());
+		
+		l[3].getPointBX().bind(p[4].getAffine().txProperty());
+		l[3].getPointBY().bind(p[4].getAffine().tyProperty());
+		l[3].getPointBZ().bind(p[4].getAffine().tzProperty());
+
+		l[4].getPointAX().bind(p[4].getAffine().txProperty());
+		l[4].getPointAY().bind(p[4].getAffine().tyProperty());
+		l[4].getPointAZ().bind(p[4].getAffine().tzProperty());
+		
+		l[4].getPointBX().bind(p[5].getAffine().txProperty());
+		l[4].getPointBY().bind(p[5].getAffine().tyProperty());
+		l[4].getPointBZ().bind(p[5].getAffine().tzProperty());
+	}
+	
 	private synchronized void listener() {
-		
-	
-	    final PhongMaterial greyMaterial = new PhongMaterial();
-        greyMaterial.setDiffuseColor(Color.BLUE);
-        greyMaterial.setSpecularColor(Color.BLUE);
-	    cylinder.setMaterial(greyMaterial);
-	    
-/*	    cylinder.getTransforms().clear();
-	    cylinder.getTransforms().addAll(calcDirection(
-	    		new Point3D(0d,
-	    				    0d,
-	    				    0d),
-	    		new Point3D(target.getTranslateX(),target.getTranslateY(),target.getTranslateZ())));
-*/	    
-	    bone.getTransforms().clear();
-	    bone.getTransforms().addAll(calcDirection2(
-	    		new Point3D(bone.getpJoint().getAffine().getTx(),
-    				    bone.getpJoint().getAffine().getTy(),
-    				    bone.getpJoint().getAffine().getTz()),
-    		    new Point3D(target.getTranslateX(),target.getTranslateY(),target.getTranslateZ())
-				));
+		recalculation();
 	}
 	
-	private ObservableList<Transform> calcDirection(Point3D A, Point3D B) {
-		    Point3D temp = A.subtract(B);
-		    double Y = temp.getX() != 0 || temp.getZ() != 0 ? B.getY() : B.getY() > A.getY() ? B.getY() : A.getY();
-		    Point3D dir = A.subtract(B).crossProduct(new Point3D(0, -1, 0));
-		    double angle = Math.acos(A.subtract(B).normalize().dotProduct(new Point3D(0, -1, 0)));
-		    double h1 = A.distance(B);	
-		    cylinder.setHeight(h1);
-		    List<Transform> transformations = new ArrayList<>();
-		    ObservableList<Transform> transforms = FXCollections.observableList(transformations);
-		    transforms.addAll(new Translate(B.getX(), Y - h1 / 2d, B.getZ()),
-		            new Rotate(-Math.toDegrees(angle), 0d, h1 / 2d, 0d, new Point3D(dir.getX(), -dir.getY(), dir.getZ())));
-		    return transforms;
+	private void setPosition(Joint a, Joint b) {
+		a.getAffine().setTx(b.getAffine().getTx()); 
+		a.getAffine().setTy(b.getAffine().getTy()); 
+		a.getAffine().setTz(b.getAffine().getTz()); 
 	}
-	
-	private ObservableList<Transform> calcDirection2(Point3D A, Point3D B) {
-	    Point3D temp = A.subtract(B);
-	    double Y = temp.getX() != 0 || temp.getZ() != 0 ? B.getY() : B.getY() > A.getY() ? B.getY() : A.getY();
-	    Point3D dir = A.subtract(B).crossProduct(new Point3D(0, -1, 0));
-	    double angle = Math.acos(A.subtract(B).normalize().dotProduct(new Point3D(0, 1, 0)));
-	    double h1 = A.distance(B);	
-	    
-	    List<Transform> transformations = new ArrayList<>();
-	    ObservableList<Transform> transforms = FXCollections.observableList(transformations);
-	    transforms.addAll(new Translate(A.getX(),A.getY(),A.getZ()),
-	            new Rotate(Math.toDegrees(angle), A.getX(),A.getY(),A.getZ(), new Point3D(dir.getX(), -dir.getY(), dir.getZ())),
-	            new Rotate(-90, 0, 0, 0, Rotate.Z_AXIS));
 
-	    return transforms;
-}
 }

@@ -27,21 +27,21 @@ public class ControlView extends Group{
 	private double x2 = 180;
 	private double y2 = 100d;
 	
-	private NiceSlider s_mxx = new NiceSlider(x,y        ,"mxx: ", -1000d, 1000d, -50d);
-	private NiceSlider s_mxy = new NiceSlider(x,y += STEP,"mxy: ", -1000d, 1000d, 50d);
-	private NiceSlider s_mxz = new NiceSlider(x,y += STEP,"mxz: ", -1000d, 1000d, 50d);
+	private NiceSlider s_mxx = new NiceSlider(x,y        ,"target x: ", -1000d, 1000d, 50d);
+	private NiceSlider s_mxy = new NiceSlider(x,y += STEP,"target y: ", -1000d, 1000d, -50d);
+	private NiceSlider s_mxz = new NiceSlider(x,y += STEP,"target z: ", -1000d, 1000d, 50d);
 
-	private NiceSlider s_myx = new NiceSlider(x,y += STEP,"myx: ", -10d, 10d, 0d);
-	private NiceSlider s_myy = new NiceSlider(x,y += STEP,"myy: ", -10d, 10d, 0d);
-	private NiceSlider s_myz = new NiceSlider(x,y += STEP,"myz: ", -10d, 10d, 0d);
+	private NiceSlider s_myx = new NiceSlider(x,y += STEP,"myx: ", -1000d, 1000d, -50d);
+	private NiceSlider s_myy = new NiceSlider(x,y += STEP,"myy: ", -1000d, 1000d, 50d);
+	private NiceSlider s_myz = new NiceSlider(x,y += STEP,"myz: ", -1000d, 1000d, 50d);
 
-	private NiceSlider s_mzx = new NiceSlider(x,y += STEP,"mzx: ", -10d, 10d, 0d);
-	private NiceSlider s_mzy = new NiceSlider(x,y += STEP,"mzy: ", -10d, 10d, 0d);
-	private NiceSlider s_mzz = new NiceSlider(x,y += STEP,"mzz: ", -10d, 10d, 0d);
+	private NiceSlider s_mzx = new NiceSlider(x,y += STEP,"mzx: ", -1000d, 1000d, 50d);
+	private NiceSlider s_mzy = new NiceSlider(x,y += STEP,"mzy: ", -1000d, 1000d, 50d);
+	private NiceSlider s_mzz = new NiceSlider(x,y += STEP,"mzz: ", -1000d, 1000d, -50d);
 
-	private NiceSlider s_tx = new NiceSlider(x,y += STEP,"tx: ", -10d, 10d, 0d);
-	private NiceSlider s_ty = new NiceSlider(x,y += STEP,"ty: ", -10d, 10d, 0d);
-	private NiceSlider s_tz = new NiceSlider(x,y += STEP,"tz: ", -10d, 10d, 0d);
+	private NiceSlider s_tx = new NiceSlider(x,y += STEP,"tx: ", -1000d, 1000d, 50d);
+	private NiceSlider s_ty = new NiceSlider(x,y += STEP,"ty: ", -1000d, 1000d, 50d);
+	private NiceSlider s_tz = new NiceSlider(x,y += STEP,"tz: ", -1000d, 1000d, 50d);
 
 	private NiceSlider s_rx = new NiceSlider(x2 , y2 += STEP,"rotate x: ", 0d, 360d, 45d);
 	private NiceSlider s_ry = new NiceSlider(x2 , y2 += STEP,"rotate y: ", 0d, 360d, 45d);

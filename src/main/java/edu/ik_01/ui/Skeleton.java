@@ -9,13 +9,13 @@ import javafx.scene.Node;
 
 public class Skeleton extends Parent {
 	
-	private List<JointFx> joints = new ArrayList<>();
+	private List<Joint> joints = new ArrayList<>();
 	
 	public void addChildren(Node node) {
 		this.getChildren().add(node);
 	}
 
-	public List<JointFx> getJoints() {
+	public List<Joint> getJoints() {
 		return joints;
 	}
 	
