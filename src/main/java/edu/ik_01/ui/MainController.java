@@ -58,15 +58,12 @@ public class MainController {
 	/*
 	 * A working variables
 	 */
-	
-	
     private final int N = 5 + 1;
     private final double TOLIRANCE = .1d;
     private Joint target;
     private Joint b;
     private Joint[] p = new Joint[N];
     private Bone[] l = new Bone[N - 1];
-
     
     private double distance;
     private double distanceBreak;
@@ -84,22 +81,26 @@ public class MainController {
 	public void init() {
 		Group grp = new Group();
 		ControlView control = ((ControlPanelController) controlView.getController()).getControlView();
-		target = new Joint("target", new Affine(new Translate(50d, -50d, 50d)),Color.TRANSPARENT);
+		target = new Joint("target", new Affine(new Translate(-50d, 50d, -50d)),Color.TRANSPARENT);
 		int i = 0;
 		p[1] = new Joint("joint_" + ++i, new Affine(new Translate(50d, -50d, 50d)),Color.BLUE);
 		p[2] = new Joint("joint_" + ++i, new Affine(new Translate(-50d, 50d, 50d)),Color.BLUE);
 		p[3] = new Joint("joint_" + ++i, new Affine(new Translate(50d, 50d, -50d)),Color.BLUE);
 		p[4] = new Joint("joint_" + ++i, new Affine(new Translate(-50d, -50d, -50d)),Color.BLUE);
-		p[5] = new Joint("joint_" + ++i, new Affine(new Translate(-50d, 50d, -50d)),Color.BLUE);
+		p[5] = new Joint("joint_" + ++i, new Affine(new Translate(-50d, 50d, -50d)),Color.GREEN);
 		
 		l[1] = new Bone(new Point3D(50d, -50d, 50d), new Point3D(-50d, 50d, 50d), Color.RED);
 		l[2] = new Bone(new Point3D(-50d, 50d, 50d), new Point3D(50d, 50d, -50d), Color.RED);
 		l[3] = new Bone(new Point3D(50d, 50d, -50d), new Point3D(-50d, -50d, -50d), Color.RED);
 		l[4] = new Bone(new Point3D(-50d, -50d, -50d), new Point3D(-50d, 50d, -50d), Color.RED);
+		
+		for (i = 1; i <= (N - 2); i++) {
+			d[i] = getDistance(p[i], p[i+1]);
+		}
 
 		bind(target, control);
 		
-		grp.getChildren().addAll(target, p[1], p[2], p[3], p[4], p[5], l[1], l[2], l[3], l[4]);
+		grp.getChildren().addAll( p[1], p[2], p[3], p[4], p[5], l[1], l[2], l[3], l[4]);
 		
 		mainAnchor.getChildren().addAll(grp);
 	}
@@ -107,67 +108,55 @@ public class MainController {
 	private void recalculation() {
 		b = new Joint("buffer");	
 		//Дистанция между корнем и целью
-		//dist  = | p[1] - t |
 		distance = getDistance(p[1], target);	
-		
 		//Проверяем достижимость цели
-		distanceBreak = 0d;
+                distanceBreak  = 0d;
 		for (int i = 1; i <= (N - 2); i++) {
-			distanceBreak += getDistance(p[i], p[i+1]);
-			d[i] = getDistance(p[i], p[i+1]);
+			distanceBreak += d[i];
 		}
-		
+
 		if (distance > distanceBreak) 
 		{
 		    //цель недостижима
-			for (int i = 1; i < (N - 3); i++) 
+			for (int i=1; i<(N-2); i++) 
 		    {
 		        //Найдем дистанцию r[i] между целью t и узлом p[i]
 		        r[i] = getDistance(p[i], target);
-		        lambda[i] = d[i] / r[i];
-		        
+		        lambda[i]=d[i]/r[i];
 		        //Находим новую позицию узла p[i]
-		        //p[i+1] = (1 - lambda[i]) * p[i] + lambda[i] * t
 		        p[i] = calcNewPosition(p[i], target, p[i], lambda[i]);
-		   }
+		    }
 		} else	{
 		    //Цель достижима; т.о. b будет новой позицией узла p[1]
-		    //b = p[1];
 		    setPosition(b,p[1]);
 		    //Проверяем, не выше ли дистанция между конечным узлом p[n] и 
 		    //целевой позицией t значения терпимости (tolerance)
 		    DIFa = getDistance(p[N-1], target);
-		    
+		    double oldDIFa = 0d;
 		    while (DIFa > TOLIRANCE) {
-		         
 		    	 //Этап 1 : прямое следование
 		         //Устанавливаем конечный узел p[n] в качестве цели (вероятно, имелось ввиду "ставим на позицию цели" - прим. перев.)
-		         //p[N - 1] = target;
 		         setPosition(p[N-1], target);
-		         
-		         for (int j = (N-2); j >= 1; j--) {
+		         for (int j=(N-2); j>=1; j--) {
 		                //Получаем расстояние r[i] между узлом p[j] и новой позицией p[j+1]
 		                r[j] = getDistance(p[j+1],p[j]);
-		                lambda[j] = d[j] / r[j];
+		                lambda[j]=d[j]/r[j];
 		                //Вычисляем новую позицию  узла p[j]
-		                //p[j] = ( 1 - lambda[j]) * p[j+1] + lambda[j] * p[j]
 		                p[j] = calcNewPosition(p[j+1], p[j], lambda[j], false);		
 		         }
 		         
+		         if (DIFa - oldDIFa == 0 ) break; else oldDIFa = DIFa;
 		         //Этап 2: обратное следование
 		         //Устанавливаем корневому элементу p[1] начальную позицию
-		         //p[1] = b;
 		         setPosition(p[1], b);
-		         for (int i = 1; i < (N-2); i++) 
+		         for (int i=1; i<=(N-2); i++) 
 		         {
 		              //Получаем дистанцию r[i] между узлом p[i+1] и позицией p[i]
 		              r[i] = getDistance(p[i+1], p[i]);
-		              lambda[i] = d[i] / r[i];
+		              lambda[i]=d[i]/r[i];
 		              //Получаем новую позицию p[i]
-		              //p[i+1] = (1-lambda[i]) * p[i] + lambda[i] * p[i+1]
 		              p[i+1] = calcNewPosition(p[i], p[i+1], lambda[i], false);		  
 		         }
-		         
 		         DIFa = getDistance(p[N-1], target);
 		    }
 		}
@@ -208,7 +197,6 @@ public class MainController {
 	        t.getAffine().setTz(point.getZ());
 	        return t;
 		}
-        
 	}
 	
 	private synchronized Joint calcNewPosition(Joint a, Joint t, Joint c, double scalar) {

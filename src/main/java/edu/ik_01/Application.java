@@ -57,7 +57,7 @@ public class Application extends AbstractJavaFxApplicationSupport {
     private  Xform cameraXform = new Xform();
     private  Xform cameraXform2 = new Xform();
     private  Xform cameraXform3 = new Xform();
-    private  double cameraDistance = 450;
+    private  double cameraDistance = 1450;
     private  Xform moleculeGroup = new Xform();
 	
     private Rotate xRotate;
@@ -68,13 +68,6 @@ public class Application extends AbstractJavaFxApplicationSupport {
 	private final DoubleProperty angleY = new SimpleDoubleProperty(0);
 	private double anchorAngleX = 0;
 	private double anchorAngleY = 0;
-	
-	//camera 
-	private final Rotate cameraXRotate = new Rotate(-30, 0, 0, 0, Rotate.X_AXIS);
-	private final Rotate cameraYRotate = new Rotate(0, 0, 0, 0, Rotate.Y_AXIS);
-	private final Rotate cameraLookXRotate = new Rotate(0, 0, 0, 0, Rotate.X_AXIS);
-	private final Rotate cameraLookZRotate = new Rotate(0, 0, 0, 0, Rotate.Z_AXIS);
-	private final Translate cameraPosition = new Translate(0, 0, -40);
 
     @Value("JavaFX and spring application")
     private String windowTitle;
@@ -97,8 +90,7 @@ public class Application extends AbstractJavaFxApplicationSupport {
         buildAxes();
     	
     	Scene scene = new Scene(root, 1024, 768, true, SceneAntialiasing.BALANCED);
-    	//((MainController)view.getController()).handleMouse(scene);
-
+    	
     	scene.setFill(Color.GREY);
         handleMouse(scene, world);       
         handleKeyboard(scene, root);
@@ -113,8 +105,8 @@ public class Application extends AbstractJavaFxApplicationSupport {
         Stage stageControl = new Stage();
         stageControl.setTitle(controlPaneTitle);
        
-        stageControl.setScene(new Scene(controlView.getView(), 700, 440, true));
-        stageControl.setX(600);
+        stageControl.setScene(new Scene(controlView.getView(), 230, 150, true));
+        stageControl.setX(1050);
         stageControl.setResizable(true);
         stageControl.show();
         

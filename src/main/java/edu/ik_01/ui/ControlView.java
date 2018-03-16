@@ -27,9 +27,9 @@ public class ControlView extends Group{
 	private double x2 = 180;
 	private double y2 = 100d;
 	
-	private NiceSlider s_mxx = new NiceSlider(x,y        ,"target x: ", -1000d, 1000d, 50d);
-	private NiceSlider s_mxy = new NiceSlider(x,y += STEP,"target y: ", -1000d, 1000d, -50d);
-	private NiceSlider s_mxz = new NiceSlider(x,y += STEP,"target z: ", -1000d, 1000d, 50d);
+	private NiceSlider s_mxx = new NiceSlider(x,y        ,"target x: ", -1000d, 1000d, -50d);
+	private NiceSlider s_mxy = new NiceSlider(x,y += STEP,"target y: ", -1000d, 1000d, 50d);
+	private NiceSlider s_mxz = new NiceSlider(x,y += STEP,"target z: ", -1000d, 1000d, -50d);
 
 	private NiceSlider s_myx = new NiceSlider(x,y += STEP,"myx: ", -1000d, 1000d, -50d);
 	private NiceSlider s_myy = new NiceSlider(x,y += STEP,"myy: ", -1000d, 1000d, 50d);
@@ -56,38 +56,9 @@ public class ControlView extends Group{
 	
 	public ControlView() {
 		this.getChildren().addAll(s_mxx, s_mxy, s_mxz);
-		this.getChildren().addAll(s_myx, s_myy, s_myz);
-		this.getChildren().addAll(s_mzx, s_mzy, s_mzz);
-		this.getChildren().addAll(s_tx,  s_ty,  s_tz);
-		this.getChildren().addAll(s_rx,  s_ry,  s_rz);
 		
-       	gridPane.setGridLinesVisible(true);
-       	gridPane.setLayoutX(200d);
-       	gridPane.setLayoutY(30d);
-       	
-		for (int i = 0; i < 4; i++) {
-			ColumnConstraints cc = new ColumnConstraints();
-			cc.setPercentWidth(CELL_COLUMN_SIZE);
-			cc.setHalignment(HPos.CENTER);
-			gridPane.getColumnConstraints().add(cc);
-		}
-       	
-		for (int j = 0; j < 3; j++) {
-			RowConstraints rc = new RowConstraints();
-			rc.setPercentHeight(CELL_ROW_SIZE);
-			rc.setValignment(VPos.CENTER);
-			gridPane.getRowConstraints().add(rc);
-		}
-
-       	for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 3; j++) {
-				label[i][j] = new Label("  0  ");
-				gridPane.add(label[i][j], i, j);
-			}
-		}
-       	
-       	this.getChildren().add(gridPane);
-	}
+		
+ 	}
 	
 	public Label[][] getLabel() {
 		return label;
